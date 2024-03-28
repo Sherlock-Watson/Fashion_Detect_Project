@@ -1,14 +1,21 @@
-# data loader
+import os
+
+import numpy as np
 from torch.utils.data import Dataset
+from PIL import Image
+
 
 NUM_ATTR = 6
+num_labels_per_group = [7, 3, 3, 4, 6, 3]
 
 
+# data loader
 class FashionNet_Dataset(Dataset):
 
-    def __init__(self, root, txt, dataset):
+    def __init__(self, root, txt, transform=None):
         self.img_path = []
         self.labels = [[] for _ in range(NUM_ATTR)]
+        self.transform = transform
 
         with open(txt) as f:
             for line in f:
@@ -18,6 +25,7 @@ class FashionNet_Dataset(Dataset):
                     for i in range(NUM_ATTR):
                         self.labels[i].append(0)
         if 'test' not in txt:
+            # train or val set
             with open(txt.replace('.txt', '_attr.txt')) as f:
                 for line in f:
                     attrs = line.split()
@@ -31,27 +39,25 @@ class FashionNet_Dataset(Dataset):
 
         path = self.img_path[index]
         label = np.array([self.labels[i][index] for i in range(NUM_ATTR)])
-
+        # print(path)
         with open(path, 'rb') as f:
             sample = Image.open(f).convert('RGB')
+        if self.transform:
+            sample = self.transform(sample)
 
-        ...
-
-        return sample, label, index
+        return sample, label
 
 
-# evaluation
-def compute_avg_class_acc(gt_labels, pred_labels):
-    num_attr = 6
-    num_classes = [7, 3, 3, 4, 6, 3]  # number of classes in each attribute
-
-    per_class_acc = []
-    for attr_idx in range(num_attr):
-        for idx in range(num_classes[attr_idx]):
-            target = gt_labels[:, attr_idx]
-            pred = pred_labels[:, attr_idx]
-            correct = np.sum((target == pred) * (target == idx))
-            total = np.sum(target == idx)
-            per_class_acc.append(float(correct) / float(total))
-
-    return sum(per_class_acc) / len(per_class_acc)
+def encode_label(label):
+    new_label = np.zeros(26)
+    acc_labels = []
+    for i in range(len(label)):
+        if i == 0:
+            num = 0
+        else:
+            num = num_labels_per_group[i - 1] + acc_labels[i - 1]
+        acc_labels.append(num)
+    # print(acc_labels)
+    for (index, inner_label) in enumerate(label):
+        new_label[acc_labels[index] + inner_label] = 1
+    return new_label
