@@ -1,75 +1,62 @@
+## Run the next 2 lines if the model was NOT defined and trained before
+# model = ModifiedEffNet(num_classes, 0.2)
+# model = model.to(device)
+from Effnet import ModifiedEffNet
 import numpy as np
+
 import torch
-import fashion_dataset
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# Test Model
+model_name = "model_3.8044"
+num_classes = [7, 3, 3, 4, 6, 3]
 
-from torchvision.models import efficientnet_b3, EfficientNet_B3_Weights
-train_attr_file = "dataset/split/train_attr.txt"
-train_attr = np.loadtxt(train_attr_file, dtype=int)
-train_attr = torch.from_numpy(train_attr)
-num_classes = torch.max(train_attr, dim=0).values + 1
-print(num_classes)
+model = ModifiedEffNet(num_classes=num_classes, batch_size=batch_size)
+predictions = torch.Tensor().to(device)
+model.load_state_dict(torch.load(model_name))
+model.eval()
+with torch.no_grad():
+  for imgs in test_dataloader:
+    imgs = imgs.to(device)
 
-# model = efficientnet_b3(weights=EfficientNet_B3_Weights.IMAGENET1K_V1)
-#
-# # 打印模型结构
-# print(model)
-#
-# # 查看模型的最后一层
-# print(model.classifier)
-#
-# # 获取最后一层全连接层的输入特征数量
-# num_features = model.classifier.in_features
-# print("最后一层全连接层的输入特征数量:", num_features)
+    pred = model(imgs) # [batch size, 7, 6]
+    pred = torch.argmax(pred,dim=1) # [batch size, 6]
 
-# path = "dataset/split/train.txt"
-# root = "dataset"
-#
-# transform = transforms.Compose([
-#     transforms.ToTensor(),
-#     transforms.Resize((128, 128))
-# ])
-#
-# dataset = fashion_dataset.FashionNet_Dataset(root, path, transform)
-#
-# train_loader = DataLoader(dataset, 16, shuffle=True)
-#
-# dataiter = iter(train_loader)
-# images, labels = next(dataiter)
-#
-# rand_img = np.transpose(images[0].cpu().detach().numpy(), (1, 2, 0))
-# plt.imshow(rand_img)
-# plt.show()
-# print(f"dataset size: {len(dataset)}")
-#
-# print(dataset[0][1])
-# mean = np.array([0.0, 0.0, 0.0])
-# img = np.array(dataset[0][0])
-# img_h = img.shape[1]
-# img_w = img.shape[2]
-# standardized_pixel_count = img_w * img_h
-#
-# print(f"imgh: {img_h}; imgw: {img_w}")
-# for train_item, target in dataset:
-#     train_item = np.array(train_item)
-#     mean += np.sum(train_item, axis=(1, 2))
-#
-# mean = [m / len(dataset) for m in mean]
+    predictions = torch.cat((predictions, pred), 0) # [1000, 6]
 
+# Save Prediction    
+predictions = predictions.cpu().numpy()
+predictions = predictions.astype(int)
+file_name = 'prediction.txt' 
+np.savetxt(file_name, predictions, fmt='%.1d')
+print('Done \n')
+model_name_temp = 'model_3.8044.pt'
+model.load_state_dict(torch.load(model_name_temp))
+model.eval()
 
-# # get mean and deviation
-# print(f"mean: {mean}")
-# print(f"standard deviation: {std}")
-#
-# print('Mean of each color channel:', mean)
-# print('Standard deviation of each color channel:', std)
-#
-# # get the new transform
-# train_transform = transforms.Compose([
-#     transforms.RandomHorizontalFlip(p=0.5),
-#     transforms.RandomCrop(size=32, padding=4),
-#     transforms.ToTensor(),
-#     transforms.Normalize(mean, std)
-# ])
+predictions = torch.Tensor().to(device) # Initialize blank tensor
+
+with torch.no_grad():
+  for imgs in test_dataloader:
+    imgs = imgs.to(device)
+
+    pred = model(imgs) # [batch size, 7, 6]
+    pred = torch.argmax(pred,dim=1) # [batch size, 6]
+
+    predictions = torch.cat((predictions, pred), 0) # [1000, 6]
+
+predictions = predictions.cpu().numpy()
+predictions = predictions.astype(int)
+
+## Run next 2 lines only if want to save the predictions as a .txt file
+# file_name = 'prediction.txt' 
+# np.savetxt(file_name, predictions, fmt='%.1d')
+
+print('Done \n')
+
+# Load results
+previous_saved_pred = "prediction_LR0.1_EPOCH50_B32_WD1e-5.txt"
+previous_saved_pred = np.loadtxt(previous_saved_pred, dtype=int)
+
+# Compare loaded results with predictions from saved model, output should be 0
+num_different_pred = np.count_nonzero((predictions - previous_saved_pred))
+print(num_different_pred)

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=SCSEGPU_M2
+#SBATCH --partition=SCSEGPU_M1
 #SBATCH --qos=q_dmsai
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
@@ -11,4 +11,4 @@
 module load anaconda3/23.5.2
 eval "$(conda shell.bash hook)"
 conda activate mobilenet
-python /home/msai/xi0001ye/Fashion_Detect_Project/main.py
+python /home/msai/xi0001ye/Fashion_Detect_Project/test.py
