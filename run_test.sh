@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=SCSEGPU_M1
+#SBATCH --partition=SCSEGPU_M2
 #SBATCH --qos=q_dmsai
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1

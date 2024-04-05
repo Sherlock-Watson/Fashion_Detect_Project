@@ -68,15 +68,15 @@ if __name__ == '__main__':
     train_set = FashionNet_Dataset(root, train_path, train_transform)
     val_set = FashionNet_Dataset(root, val_path, val_transform)
 
-    batch_size = 8
+    batch_size = 16
     train_loader = DataLoader(train_set, batch_size, shuffle=False)
     val_loader = DataLoader(val_set, batch_size, shuffle=False)
 
     learning_rate = 0.05
     # Parameters
-    LR = 0.1
-    NUM_EPOCH = 10
-    WEIGHT_DECAY = 0.00001
+    LR = 0.01
+    NUM_EPOCH = 50
+    WEIGHT_DECAY = 0.0005
     MOMENTUM = 0.9
     num_classes = [7, 3, 3, 4, 6, 3]
 
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     print(f'The model has {num_params:,} trainable parameters \n')
 
     # Define optimizer and scheduler
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, NUM_EPOCH)
 
     # Define statistic variables
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     stat_val_loss = []
     stat_train_acc = []
     stat_val_acc = []
-    best_val_loss = 5.0
+    best_val_loss = 4.0
 
     # Start model training
     print(f'Training Model:')
